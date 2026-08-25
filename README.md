@@ -16,7 +16,7 @@ wrangler login
 ```bash
 wrangler r2 bucket create books
 
-wrangler d1 create pdf-vault-db
+wrangler d1 create books-db
 # copy the "database_id" it prints into wrangler.toml
 ```
 
@@ -26,21 +26,23 @@ into the `database_id` field.
 ## 3. Apply the schema
 
 ```bash
-wrangler d1 execute pdf-vault-db --remote --file=schema.sql
+wrangler d1 execute books-db --remote --file=schema.sql
 ```
 
-## 4. (Optional) Protect uploads/deletes with a shared key
+## 4. Set an upload password (optional but recommended if the site is public)
 
-Since there's no login system, you can gate write actions with a secret
-header instead:
+Since anyone with the link can currently upload/delete, you can lock those two
+actions behind a password without building a login system:
 
-```bash
-wrangler secret put UPLOAD_KEY
-```
+1. In the Cloudflare dashboard, open your Worker → **Settings → Variables and Secrets**.
+2. Add a new **secret** (not a plain variable) named `UPLOAD_KEY`, value = your chosen password.
+3. Save — no code or redeploy needed, the Worker already checks for it.
 
-If you set this, add `x-upload-key: <your key>` as a header on upload/delete
-requests (e.g. adjust `app.js` to read a key from localStorage/prompt, or
-just skip this and rely on Cloudflare Access instead — see below).
+Once set, visitors can still browse and read every PDF freely. The first time
+someone tries to **upload or delete**, the site will prompt them for the
+password and remember it for that browser session.
+
+Leave `UPLOAD_KEY` unset if you want uploads to stay fully open to anyone.
 
 ## 5. (Optional) Lock the whole site down with Cloudflare Access
 
