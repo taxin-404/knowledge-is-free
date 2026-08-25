@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knowledge is Free — PDF Archive</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
   <header class="masthead">
@@ -28,12 +29,12 @@
       </div>
     </section>
 
-    <section class="catalog" aria-label="Document catalog">
+    <section class="catalog" aria-label="Book shelf">
       <div class="catalog-head">
-        <h2>Catalog</h2>
+        <h2>Shelf</h2>
         <span class="count" id="count">0 documents</span>
       </div>
-      <div class="cards" id="cards"></div>
+      <div class="shelf" id="shelf"></div>
       <p class="empty" id="empty" hidden>Nothing filed yet. Add your first document above.</p>
     </section>
   </main>
