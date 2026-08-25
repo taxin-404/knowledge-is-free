@@ -68,7 +68,7 @@ export default {
 
         const headers = new Headers();
         headers.set("content-type", "application/pdf");
-        headers.set("content-disposition", "inline");
+        headers.set("content-disposition", "inline; filename=\"document.pdf\"");
         headers.set("cache-control", "private, max-age=3600");
         return new Response(object.body, { headers });
       }
