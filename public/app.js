@@ -303,6 +303,12 @@ readerClose.addEventListener("click", () => {
   reader.classList.remove("open");
   document.getElementById("reader-frame").innerHTML = "";
 });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && reader.classList.contains("open")) {
+    reader.classList.remove("open");
+    document.getElementById("reader-frame").innerHTML = "";
+  }
+});
 
 async function deleteFile(id) {
   if (!confirm(currentLang === "bn" ? "এই দলিলটি তাক থেকে সরাবেন?" : "Remove this document from the shelf?")) return;
