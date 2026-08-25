@@ -67,10 +67,6 @@ body {
   gap: 0.7rem;
   flex-wrap: wrap;
 }
-.mark {
-  font-size: 1.5rem;
-  color: var(--brass-bright);
-}
 .masthead h1 {
   font-size: 2.3rem;
   margin: 0;
