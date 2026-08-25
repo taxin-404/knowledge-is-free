@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Knowledge is Free — PDF Archive</title>
+<title>Knowledge Should Be Free — PDF Archive</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Tiro+Bangla&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -14,7 +14,7 @@
     <div class="masthead-inner">
       <div class="brand">
         <span class="mark">§</span>
-        <h1 data-i18n="title">Knowledge is Free</h1>
+        <h1 data-i18n="title">Knowledge Should Be Free</h1>
         <span class="tagline" data-i18n="tagline">a private archive of documents</span>
       </div>
       <button class="lang-toggle" id="lang-toggle" aria-label="Switch language">
@@ -28,9 +28,9 @@
   <main>
     <section class="intake" aria-label="Upload a document">
       <label for="file-input" class="dropzone" id="dropzone">
-        <span class="dz-label" data-i18n="dzLabel">Drop a PDF here, or click to choose one</span>
+        <span class="dz-label" data-i18n="dzLabel">Drop PDFs here, or click to choose one or more</span>
         <span class="dz-sub" data-i18n="dzSub">Only .pdf files are accepted</span>
-        <input type="file" id="file-input" accept="application/pdf" hidden>
+        <input type="file" id="file-input" accept="application/pdf" multiple hidden>
       </label>
       <div class="progress" id="progress" hidden>
         <div class="progress-bar" id="progress-bar"></div>
