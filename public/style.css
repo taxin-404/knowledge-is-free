@@ -149,7 +149,6 @@ main {
   aspect-ratio: 3 / 4;
   background: var(--paper);
   border-radius: 2px;
-  border-top: 4px solid var(--brass);
   box-shadow: 3px 3px 0 #0000004d;
   overflow: hidden;
   position: relative;
