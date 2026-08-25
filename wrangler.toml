@@ -14,7 +14,7 @@ bucket_name = "books"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "pdf-vault-db"
+database_name = "books-db"
 database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 # Optional: set a shared secret to gate uploads/deletes without building
