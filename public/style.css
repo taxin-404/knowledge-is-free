@@ -196,12 +196,15 @@ main {
 .card-delete:hover { background: var(--danger); color: #fff; }
 
 .reader {
+  display: none;
   position: fixed;
   inset: 0;
   background: var(--ink);
-  display: flex;
   flex-direction: column;
   z-index: 10;
+}
+.reader.open {
+  display: flex;
 }
 .reader-bar {
   display: flex;
