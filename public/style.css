@@ -314,6 +314,8 @@ main {
   border-bottom: 1px solid var(--line);
   font-family: var(--mono);
   font-size: 0.8rem;
+  position: relative;
+  z-index: 9999;
 }
 .reader-actions { display: flex; gap: 0.8rem; align-items: center; }
 .reader-actions button {
@@ -334,6 +336,10 @@ main {
   border: none;
   background: #fff;
   overflow: hidden;
+  position: relative;
+  /* Forces any position:fixed elements EmbedPDF renders internally to stay
+     contained within this box instead of covering the whole viewport. */
+  transform: translateZ(0);
 }
 
 @media (max-width: 520px) {
