@@ -15,7 +15,7 @@ bucket_name = "books"
 [[d1_databases]]
 binding = "DB"
 database_name = "books-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "d547cf06-1dad-4d5e-82a8-1eeaadc8bf95"
 
 # Optional: set a shared secret to gate uploads/deletes without building
 # a full login system. Set it with:
