@@ -4,9 +4,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 /* ---------------- i18n ---------------- */
 const I18N = {
   en: {
-    title: "Knowledge is Free",
+    title: "Knowledge Should Be Free",
     tagline: "a private archive of documents",
-    dzLabel: "Drop a PDF here, or click to choose one",
+    dzLabel: "Drop PDFs here, or click to choose one or more",
     dzSub: "Only .pdf files are accepted",
     shelf: "Shelf",
     searchPlaceholder: "Search books... (English, বাংলা, or Avro)",
@@ -22,9 +22,9 @@ const I18N = {
     onlyPdf: "Only PDF files are accepted.",
   },
   bn: {
-    title: "Knowledge is Free",
+    title: "জ্ঞান মুক্ত হওয়া উচিত",
     tagline: "ব্যক্তিগত দলিল সংরক্ষণাগার",
-    dzLabel: "একটি পিডিএফ এখানে ফেলুন, অথবা ক্লিক করে বেছে নিন",
+    dzLabel: "একটি বা একাধিক পিডিএফ এখানে ফেলুন, অথবা ক্লিক করে বেছে নিন",
     dzSub: "শুধুমাত্র .pdf ফাইল গ্রহণযোগ্য",
     shelf: "তাক",
     searchPlaceholder: "বই খুঁজুন... (ইংরেজি, বাংলা, বা অভ্র)",
@@ -325,17 +325,14 @@ async function deleteFile(id) {
   loadFiles();
 }
 
-async function uploadFile(file) {
+async function uploadFile(file, key, indexLabel) {
   if (file.type !== "application/pdf") {
-    alert(t("onlyPdf"));
-    return;
+    alert(`${t("onlyPdf")} (${file.name})`);
+    return false;
   }
 
-  const key = getUploadKey(true);
-
-  progress.hidden = false;
   progressBar.style.width = "10%";
-  progressLabel.textContent = t("readingCover");
+  progressLabel.textContent = `${indexLabel ? indexLabel + " — " : ""}${t("readingCover")}`;
 
   const thumb = await generateThumbnail(file);
 
@@ -343,7 +340,7 @@ async function uploadFile(file) {
   form.append("file", file);
   if (thumb) form.append("thumb", thumb, "thumb.png");
 
-  progressLabel.textContent = t("filing");
+  progressLabel.textContent = `${indexLabel ? indexLabel + " — " : ""}${t("filing")}`;
 
   try {
     const xhr = new XMLHttpRequest();
@@ -357,7 +354,6 @@ async function uploadFile(file) {
       };
       xhr.onload = () => {
         if (xhr.status === 401) {
-          clearUploadKey();
           reject(new Error("unauthorized"));
         } else if (xhr.status < 300) {
           resolve();
@@ -368,23 +364,47 @@ async function uploadFile(file) {
       xhr.onerror = () => reject(new Error("upload failed"));
       xhr.send(form);
     });
-    progressLabel.textContent = t("filed");
+    return true;
   } catch (err) {
     if (err.message === "unauthorized") {
-      progressLabel.textContent = t("wrongPassword");
+      clearUploadKey();
       alert(t("wrongPassword"));
-    } else {
-      progressLabel.textContent = t("failed");
-      console.error(err);
+      throw err; // stop the whole queue — password is wrong for all of them
     }
-  } finally {
-    setTimeout(() => (progress.hidden = true), 900);
-    loadFiles();
+    console.error(err);
+    return false; // this file failed, but keep going with the rest
   }
 }
 
+async function uploadFiles(fileList) {
+  const files = Array.from(fileList).filter((f) => f.type === "application/pdf");
+  if (files.length === 0) {
+    alert(t("onlyPdf"));
+    return;
+  }
+
+  const key = getUploadKey(true);
+  progress.hidden = false;
+
+  let failed = 0;
+  for (let i = 0; i < files.length; i++) {
+    const label = files.length > 1 ? `${i + 1}/${files.length}` : "";
+    try {
+      const ok = await uploadFile(files[i], key, label);
+      if (!ok) failed++;
+    } catch (err) {
+      // wrong password — abort the rest of the queue
+      break;
+    }
+  }
+
+  progressLabel.textContent = failed > 0 ? t("failed") : t("filed");
+  setTimeout(() => (progress.hidden = true), 900);
+  loadFiles();
+}
+
 fileInput.addEventListener("change", () => {
-  if (fileInput.files[0]) uploadFile(fileInput.files[0]);
+  if (fileInput.files.length) uploadFiles(fileInput.files);
   fileInput.value = "";
 });
 
@@ -401,8 +421,7 @@ fileInput.addEventListener("change", () => {
   })
 );
 dropzone.addEventListener("drop", (e) => {
-  const file = e.dataTransfer.files[0];
-  if (file) uploadFile(file);
+  if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
 });
 
 applyLang();
