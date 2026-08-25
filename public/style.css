@@ -348,4 +348,28 @@ main {
 @media (max-width: 520px) {
   .shelf { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 1rem; }
   .masthead-inner { align-items: flex-start; }
+  .masthead { position: static; }
 }
+
+.back-to-top {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--brass);
+  color: var(--ink);
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 10px #00000066;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.back-to-top.show { display: flex; }
+.back-to-top:hover { background: var(--brass-bright); transform: translateY(-2px); }
