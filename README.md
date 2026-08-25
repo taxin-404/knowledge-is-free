@@ -51,6 +51,25 @@ not just uploads.
 
 ## 6. Deploy
 
+**Option A — Cloudflare Git integration (recommended, no local deploy needed)**
+
+1. Push this repo to GitHub.
+2. In the Cloudflare dashboard: Workers & Pages → Create → **Connect to Git**.
+3. Pick your `knowledge-is-free` repo.
+4. Set:
+   - **Build command:** `npm install`
+   - **Deploy command:** `npx wrangler deploy`
+   - **Root directory:** `/`
+5. Under the project's Settings → Bindings, Cloudflare reads the R2 and D1
+   bindings straight from `wrangler.toml` — no need to re-add them manually,
+   as long as the bucket/database already exist (steps 2–3 above) and the
+   `database_id` in `wrangler.toml` is filled in and committed.
+6. Save. Every push to your main branch now triggers a build + deploy
+   automatically — check progress under Workers & Pages → your project →
+   Deployments.
+
+**Option B — Deploy from your own machine**
+
 ```bash
 wrangler deploy
 ```
