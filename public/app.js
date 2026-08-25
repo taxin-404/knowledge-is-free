@@ -10,7 +10,6 @@ const emptyEl = document.getElementById("empty");
 const reader = document.getElementById("reader");
 const readerFrame = document.getElementById("reader-frame");
 const readerTitle = document.getElementById("reader-title");
-const readerDownload = document.getElementById("reader-download");
 const readerClose = document.getElementById("reader-close");
 
 function formatSize(bytes) {
@@ -61,13 +60,11 @@ function escapeHtml(str) {
 function openReader(f) {
   readerTitle.textContent = f.name;
   readerFrame.src = `/api/files/${f.id}`;
-  readerDownload.href = `/api/files/${f.id}`;
-  readerDownload.download = f.name;
-  reader.hidden = false;
+  reader.classList.add("open");
 }
 
 readerClose.addEventListener("click", () => {
-  reader.hidden = true;
+  reader.classList.remove("open");
   readerFrame.src = "";
 });
 
