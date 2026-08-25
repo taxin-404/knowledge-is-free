@@ -1,26 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="html-root">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knowledge is Free — PDF Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Tiro+Bangla&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
   <header class="masthead">
     <div class="masthead-inner">
-      <span class="mark">§</span>
-      <h1>Knowledge is Free</h1>
-      <span class="tagline">a private archive of documents</span>
+      <div class="brand">
+        <span class="mark">§</span>
+        <h1 data-i18n="title">Knowledge is Free</h1>
+        <span class="tagline" data-i18n="tagline">a private archive of documents</span>
+      </div>
+      <button class="lang-toggle" id="lang-toggle" aria-label="Switch language">
+        <span class="lang-opt" data-lang-opt="en">EN</span>
+        <span class="lang-sep">/</span>
+        <span class="lang-opt" data-lang-opt="bn">বাং</span>
+      </button>
     </div>
   </header>
 
   <main>
     <section class="intake" aria-label="Upload a document">
       <label for="file-input" class="dropzone" id="dropzone">
-        <span class="dz-label">Drop a PDF here, or click to choose one</span>
-        <span class="dz-sub">Only .pdf files are accepted</span>
+        <span class="dz-label" data-i18n="dzLabel">Drop a PDF here, or click to choose one</span>
+        <span class="dz-sub" data-i18n="dzSub">Only .pdf files are accepted</span>
         <input type="file" id="file-input" accept="application/pdf" hidden>
       </label>
       <div class="progress" id="progress" hidden>
@@ -31,11 +40,18 @@
 
     <section class="catalog" aria-label="Book shelf">
       <div class="catalog-head">
-        <h2>Shelf</h2>
+        <h2 data-i18n="shelf">Shelf</h2>
         <span class="count" id="count">0 documents</span>
       </div>
+
+      <div class="search-bar">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search books...">
+      </div>
+
       <div class="shelf" id="shelf"></div>
-      <p class="empty" id="empty" hidden>Nothing filed yet. Add your first document above.</p>
+      <p class="empty" id="empty" hidden data-i18n="empty">Nothing filed yet. Add your first document above.</p>
+      <p class="no-results" id="no-results" hidden data-i18n="noResults">No matches for that search.</p>
     </section>
   </main>
 
@@ -43,12 +59,16 @@
     <div class="reader-bar">
       <span id="reader-title">Document</span>
       <div class="reader-actions">
-        <button id="reader-close" aria-label="Close reader">Close</button>
+        <button id="reader-close" data-i18n="close" aria-label="Close reader">Close</button>
       </div>
     </div>
-    <iframe id="reader-frame" title="PDF viewer"></iframe>
+    <div id="reader-frame" class="reader-viewer"></div>
   </div>
 
+  <script type="module">
+    import EmbedPDF from 'https://cdn.jsdelivr.net/npm/@embedpdf/snippet@2/dist/embedpdf.js';
+    window.EmbedPDF = EmbedPDF;
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
