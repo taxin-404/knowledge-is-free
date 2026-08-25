@@ -14,7 +14,7 @@ wrangler login
 ## 2. Create the R2 bucket and D1 database
 
 ```bash
-wrangler r2 bucket create pdf-vault-files
+wrangler r2 bucket create books
 
 wrangler d1 create pdf-vault-db
 # copy the "database_id" it prints into wrangler.toml
