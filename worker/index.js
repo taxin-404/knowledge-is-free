@@ -71,13 +71,46 @@ export default {
       const fileMatch = pathname.match(/^\/api\/files\/([a-f0-9-]+)$/);
       if (fileMatch && request.method === "GET") {
         const id = fileMatch[1];
-        const object = await env.PDF_BUCKET.get(`${id}.pdf`);
+        const key = `${id}.pdf`;
+        const rangeHeader = request.headers.get("range");
+
+        if (rangeHeader) {
+          const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+          if (match) {
+            const start = parseInt(match[1], 10);
+            const endSpecified = match[2] !== "";
+            const requestedEnd = endSpecified ? parseInt(match[2], 10) : undefined;
+
+            const object = await env.PDF_BUCKET.get(
+              key,
+              requestedEnd !== undefined
+                ? { range: { offset: start, length: requestedEnd - start + 1 } }
+                : { range: { offset: start } }
+            );
+            if (!object) return json({ error: "not found" }, 404);
+
+            const totalSize = object.size;
+            const rangeEnd = requestedEnd !== undefined ? Math.min(requestedEnd, totalSize - 1) : totalSize - 1;
+
+            const headers = new Headers();
+            headers.set("content-type", "application/pdf");
+            headers.set("accept-ranges", "bytes");
+            headers.set("cache-control", "private, max-age=3600");
+            headers.set("content-range", `bytes ${start}-${rangeEnd}/${totalSize}`);
+            headers.set("content-length", String(rangeEnd - start + 1));
+            return new Response(object.body, { status: 206, headers });
+          }
+        }
+
+        const object = await env.PDF_BUCKET.get(key);
         if (!object) return json({ error: "not found" }, 404);
 
         const headers = new Headers();
         headers.set("content-type", "application/pdf");
         headers.set("content-disposition", 'inline; filename="document.pdf"');
         headers.set("cache-control", "private, max-age=3600");
+        headers.set("accept-ranges", "bytes");
+        headers.set("content-length", String(object.size));
         return new Response(object.body, { headers });
       }
 
