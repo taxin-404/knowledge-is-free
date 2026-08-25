@@ -43,6 +43,9 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+function displayName(name) {
+  return name.replace(/\.pdf$/i, "").replace(/_/g, " ");
+}
 
 // ---- Thumbnail generation (client-side, via pdf.js) ----
 async function generateThumbnail(file) {
@@ -88,7 +91,7 @@ async function loadFiles() {
           <span class="ext">PDF</span>
         </div>
       </div>
-      <div class="book-name">${escapeHtml(f.name)}</div>
+      <div class="book-name">${escapeHtml(displayName(f.name))}</div>
       <div class="book-meta">${formatSize(f.size)} &middot; ${formatDate(f.uploaded_at)}</div>
       <button class="book-remove" data-id="${f.id}">Remove</button>
     `;
@@ -115,7 +118,7 @@ document.addEventListener(
 );
 
 function openReader(f) {
-  readerTitle.textContent = f.name;
+  readerTitle.textContent = displayName(f.name);
   readerFrame.src = `/api/files/${f.id}`;
   reader.classList.add("open");
 }
