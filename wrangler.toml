@@ -1,0 +1,23 @@
+name = "knowledge-is-free"
+main = "worker/index.js"
+compatibility_date = "2024-11-01"
+
+# Serve the static frontend from Pages instead if you prefer;
+# this config runs everything (API + static assets) from one Worker.
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[r2_buckets]]
+binding = "PDF_BUCKET"
+bucket_name = "pdf-vault-files"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pdf-vault-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# Optional: set a shared secret to gate uploads/deletes without building
+# a full login system. Set it with:
+#   wrangler secret put UPLOAD_KEY
+# Leave unset to allow uploads with no key.
