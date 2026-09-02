@@ -205,9 +205,9 @@ function matchesSearch(name, query) {
   const plain = displayName(name).toLowerCase();
   const q = query.toLowerCase();
   if (plain.includes(q)) return true;
-  if (displayName(name).includes(query)) return true; // direct Bangla substring
-  const avro = avroTransliterate(query);
-  if (avro && displayName(name).includes(avro)) return true;
+  if (plain.includes(query)) return true; // direct Bangla substring (no case)
+  const avro = avroTransliterate(query).toLowerCase();
+  if (avro && plain.includes(avro)) return true;
   return false;
 }
 
