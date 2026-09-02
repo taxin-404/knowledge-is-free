@@ -31,6 +31,17 @@ function checkKey(request, env) {
   return provided === env.UPLOAD_KEY;
 }
 
+// Accept different ways of configuring R2_ACCOUNT_ID. Some setups store the
+// bare account id, others the full S3 endpoint. Normalize to the bare id so
+// presigned URLs always build correctly.
+function normalizeAccountId(value) {
+  if (!value) return "";
+  let s = value.trim();
+  s = s.replace(/^https?:\/\//i, "");
+  s = s.replace(/\.r2\.cloudflarestorage\.com.*$/i, "");
+  return s;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -58,8 +69,13 @@ export default {
           secretAccessKey: env.R2_SECRET_ACCESS_KEY,
         });
 
+        const accountId = normalizeAccountId(env.R2_ACCOUNT_ID);
+        if (!accountId) {
+          return json({ error: "R2 account id is invalid" }, 500);
+        }
+
         const objectUrl = new URL(
-          `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET_NAME}/${key}`
+          `https://${accountId}.r2.cloudflarestorage.com/${BUCKET_NAME}/${key}`
         );
         objectUrl.searchParams.set("X-Amz-Expires", "3600");
 

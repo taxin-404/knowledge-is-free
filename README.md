@@ -66,7 +66,10 @@ needs two things set up once:
 
 In your Worker's **Settings → Variables and Secrets** (the top-level Runtime
 one), add three secrets:
-- `R2_ACCOUNT_ID`
+- `R2_ACCOUNT_ID` — the **bare account ID** only (e.g. `3d6c34dae...`).
+  Do **not** paste the full endpoint like
+  `https://3d6c34dae...,r2.cloudflarestorage.com` — that breaks presigned
+  URLs and makes uploads fail with `ERR_NAME_NOT_RESOLVED`.
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 
