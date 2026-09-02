@@ -261,12 +261,15 @@ main {
   gap: 0.55rem;
 }
 .book-cover {
-  aspect-ratio: auto;
+  aspect-ratio: 210 / 297;
   background: var(--surface);
   border-radius: 2px;
   box-shadow: 3px 3px 0 #0000004d;
   overflow: hidden;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: transform 0.14s ease, box-shadow 0.14s ease;
 }
 .book:hover .book-cover {
@@ -275,7 +278,8 @@ main {
 }
 .book-cover img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 .book-cover .fallback {
