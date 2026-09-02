@@ -343,39 +343,64 @@ async function uploadFile(file, key, indexLabel) {
     return false;
   }
 
-  progressBar.style.width = "10%";
-  progressLabel.textContent = `${indexLabel ? indexLabel + " — " : ""}${t("readingCover")}`;
-
-  const thumb = await generateThumbnail(file);
-
-  const form = new FormData();
-  form.append("file", file);
-  if (thumb) form.append("thumb", thumb, "thumb.png");
-
-  progressLabel.textContent = `${indexLabel ? indexLabel + " — " : ""}${t("filing")}`;
+  const setLabel = (msg) => {
+    progressLabel.textContent = `${indexLabel ? indexLabel + " — " : ""}${msg}`;
+  };
 
   try {
-    const xhr = new XMLHttpRequest();
+    // Step 1: get a presigned R2 upload URL from the Worker
+    setLabel(t("readingCover"));
+    const thumb = await generateThumbnail(file);
+
+    progressBar.style.width = "5%";
+    const urlRes = await fetch("/api/upload-url", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-upload-key": key },
+      body: JSON.stringify({ filename: file.name }),
+    });
+    if (urlRes.status === 401) throw new Error("unauthorized");
+    if (!urlRes.ok) throw new Error("could not get upload URL");
+    const { id, uploadUrl } = await urlRes.json();
+
+    // Step 2: PUT the file straight to R2 — this bypasses the Worker
+    // entirely, so there's no size limit from our own server.
+    setLabel(t("filing"));
     await new Promise((resolve, reject) => {
-      xhr.open("POST", "/api/upload");
-      xhr.setRequestHeader("x-upload-key", key);
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", uploadUrl, true);
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
-          progressBar.style.width = `${(e.loaded / e.total) * 100}%`;
+          progressBar.style.width = `${5 + (e.loaded / e.total) * 85}%`;
         }
       };
-      xhr.onload = () => {
-        if (xhr.status === 401) {
-          reject(new Error("unauthorized"));
-        } else if (xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(xhr.responseText));
-        }
-      };
-      xhr.onerror = () => reject(new Error("upload failed"));
-      xhr.send(form);
+      xhr.onload = () => (xhr.status < 300 ? resolve() : reject(new Error("R2 upload failed")));
+      xhr.onerror = () => reject(new Error("R2 upload failed"));
+      xhr.send(file);
     });
+
+    // Step 3: upload the thumbnail (small, goes through the Worker fine)
+    if (thumb) {
+      const form = new FormData();
+      form.append("id", id);
+      form.append("thumb", thumb, "thumb.png");
+      await fetch("/api/upload-thumb", {
+        method: "POST",
+        headers: { "x-upload-key": key },
+        body: form,
+      });
+    }
+
+    // Step 4: record the metadata
+    progressBar.style.width = "95%";
+    const finalizeRes = await fetch("/api/finalize", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-upload-key": key },
+      body: JSON.stringify({ id, name: file.name, size: file.size }),
+    });
+    if (finalizeRes.status === 401) throw new Error("unauthorized");
+    if (!finalizeRes.ok) throw new Error("could not finalize upload");
+
+    progressBar.style.width = "100%";
     return true;
   } catch (err) {
     if (err.message === "unauthorized") {
