@@ -1,11 +1,22 @@
 // Knowledge is Free — Cloudflare Worker
+//
+// Large PDFs bypass the Worker's own request-body limit entirely: the
+// browser gets a presigned URL and uploads straight to R2. Only small
+// things (thumbnails) and JSON metadata pass through this Worker.
+//
 // Routes:
-//   GET    /api/files          -> list metadata
-//   POST   /api/upload         -> upload a PDF + optional cover thumbnail (multipart/form-data)
-//   GET    /api/files/:id      -> stream the PDF bytes (inline view)
-//   GET    /api/thumbs/:id     -> stream the cover thumbnail (PNG)
-//   DELETE /api/files/:id      -> remove file + thumbnail + metadata
+//   GET    /api/files            -> list metadata
+//   POST   /api/upload-url       -> get a presigned R2 PUT URL for a new file
+//   POST   /api/upload-thumb     -> upload a small cover thumbnail (multipart)
+//   POST   /api/finalize         -> record metadata after a direct R2 upload
+//   GET    /api/files/:id        -> stream the PDF bytes (inline view, range-aware)
+//   GET    /api/thumbs/:id       -> stream the cover thumbnail (PNG)
+//   DELETE /api/files/:id        -> remove file + thumbnail + metadata
 // Everything else falls through to the static ASSETS binding (the frontend).
+
+import { AwsClient } from "aws4fetch";
+
+const BUCKET_NAME = "books";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -33,39 +44,67 @@ export default {
         return json(results);
       }
 
-      if (pathname === "/api/upload" && request.method === "POST") {
+      if (pathname === "/api/upload-url" && request.method === "POST") {
         if (!checkKey(request, env)) return json({ error: "unauthorized" }, 401);
-
-        const form = await request.formData();
-        const file = form.get("file");
-        const thumb = form.get("thumb");
-
-        if (!file || typeof file === "string") {
-          return json({ error: "no file provided" }, 400);
-        }
-        if (file.type !== "application/pdf") {
-          return json({ error: "only PDF files are allowed" }, 400);
+        if (!env.R2_ACCOUNT_ID || !env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
+          return json({ error: "R2 API credentials are not configured" }, 500);
         }
 
         const id = crypto.randomUUID();
+        const key = `${id}.pdf`;
 
-        await env.PDF_BUCKET.put(`${id}.pdf`, file.stream(), {
-          httpMetadata: { contentType: "application/pdf" },
+        const r2 = new AwsClient({
+          accessKeyId: env.R2_ACCESS_KEY_ID,
+          secretAccessKey: env.R2_SECRET_ACCESS_KEY,
         });
 
-        if (thumb && typeof thumb !== "string") {
-          await env.PDF_BUCKET.put(`${id}-thumb.png`, thumb.stream(), {
-            httpMetadata: { contentType: "image/png" },
-          });
+        const objectUrl = new URL(
+          `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET_NAME}/${key}`
+        );
+        objectUrl.searchParams.set("X-Amz-Expires", "3600");
+
+        const signed = await r2.sign(new Request(objectUrl, { method: "PUT" }), {
+          aws: { signQuery: true },
+        });
+
+        return json({ id, uploadUrl: signed.url });
+      }
+
+      if (pathname === "/api/upload-thumb" && request.method === "POST") {
+        if (!checkKey(request, env)) return json({ error: "unauthorized" }, 401);
+
+        const form = await request.formData();
+        const id = form.get("id");
+        const thumb = form.get("thumb");
+        if (!id || !thumb || typeof thumb === "string") {
+          return json({ error: "missing id or thumb" }, 400);
         }
+
+        await env.PDF_BUCKET.put(`${id}-thumb.png`, thumb.stream(), {
+          httpMetadata: { contentType: "image/png" },
+        });
+        return json({ ok: true });
+      }
+
+      if (pathname === "/api/finalize" && request.method === "POST") {
+        if (!checkKey(request, env)) return json({ error: "unauthorized" }, 401);
+
+        const { id, name, size } = await request.json();
+        if (!id || !name || typeof size !== "number") {
+          return json({ error: "missing id, name, or size" }, 400);
+        }
+
+        // Confirm the object actually landed in R2 before recording it.
+        const head = await env.PDF_BUCKET.head(`${id}.pdf`);
+        if (!head) return json({ error: "upload not found in storage" }, 400);
 
         await env.DB.prepare(
           "INSERT INTO files (id, name, size, uploaded_at) VALUES (?, ?, ?, ?)"
         )
-          .bind(id, file.name, file.size, new Date().toISOString())
+          .bind(id, name, size, new Date().toISOString())
           .run();
 
-        return json({ id, name: file.name, size: file.size });
+        return json({ id, name, size });
       }
 
       const fileMatch = pathname.match(/^\/api\/files\/([a-f0-9-]+)$/);
