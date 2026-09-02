@@ -11,6 +11,7 @@ const I18N = {
     shelf: "Shelf",
     searchPlaceholder: "Search books...",
     remove: "Remove",
+    back: "Back",
     close: "Close",
     filing: "Filing...",
     readingCover: "Reading cover...",
@@ -29,6 +30,7 @@ const I18N = {
     shelf: "তাক",
     searchPlaceholder: "বই খুঁজুন...",
     remove: "মুছুন",
+    back: "ফিরে যান",
     close: "বন্ধ করুন",
     filing: "জমা হচ্ছে...",
     readingCover: "প্রচ্ছদ পড়া হচ্ছে...",
@@ -310,15 +312,28 @@ function openReader(f) {
     iframe.style.cssText = "width:100%;height:100%;border:none;background:#fff;";
     container.appendChild(iframe);
   }
+  // Push a history state so the browser/Android back button closes the reader.
+  history.pushState({ reader: true }, "");
 }
-readerClose.addEventListener("click", () => {
+
+function closeReader() {
   reader.classList.remove("open");
   document.getElementById("reader-frame").innerHTML = "";
+}
+
+readerClose.addEventListener("click", () => {
+  closeReader();
+  if (history.state && history.state.reader) history.back();
 });
+
+window.addEventListener("popstate", () => {
+  closeReader();
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && reader.classList.contains("open")) {
-    reader.classList.remove("open");
-    document.getElementById("reader-frame").innerHTML = "";
+    closeReader();
+    if (history.state && history.state.reader) history.back();
   }
 });
 
