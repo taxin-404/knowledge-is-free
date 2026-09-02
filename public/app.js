@@ -262,38 +262,45 @@ async function generateThumbnail(file) {
   }
 }
 
-// Average the color of the page's outer border pixels (top + bottom + edges).
+// Determine the cover's edge color from the page's outer border pixels.
+// Using the most common (dominant) color rather than a mean avoids the muddy
+// tint you get when averaging text bleed / off-white casts into one color,
+// so white pages stay white.
 function sampleEdgeColor(canvas) {
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
   const h = canvas.height;
-  const thickness = Math.max(1, Math.round(Math.min(w, h) * 0.01));
+  const thickness = Math.max(2, Math.round(Math.min(w, h) * 0.015));
   const data = ctx.getImageData(0, 0, w, h).data;
-  let r = 0, g = 0, b = 0, n = 0;
 
-  const addLine = (y) => {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
-    }
-  };
-  const addCol = (x) => {
-    for (let y = 0; y < h; y++) {
-      const i = (y * w + x) * 4;
-      r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
-    }
+  const buckets = new Map();
+  const add = (idx) => {
+    const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+    const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4); // quantize 4 bits/channel
+    buckets.set(key, (buckets.get(key) || 0) + 1);
   };
 
   for (let t = 0; t < thickness; t++) {
-    addLine(t);
-    addLine(h - 1 - t);
+    for (let x = 0; x < w; x++) add((t * w + x) * 4);          // top
+    for (let x = 0; x < w; x++) add(((h - 1 - t) * w + x) * 4); // bottom
   }
   for (let t = 0; t < thickness; t++) {
-    addCol(t);
-    addCol(w - 1 - t);
+    for (let y = 0; y < h; y++) add((y * w + t) * 4);          // left
+    for (let y = 0; y < h; y++) add((y * w + w - 1 - t) * 4);  // right
   }
-  if (n === 0) return "#e4e0d8";
-  return `rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`;
+
+  let bestKey = null, bestCount = -1;
+  for (const [key, count] of buckets) {
+    if (count > bestCount) {
+      bestCount = count;
+      bestKey = key;
+    }
+  }
+  if (bestKey === null) return "#e4e0d8";
+  const r = (bestKey >> 8) & 0xf0;
+  const g = (bestKey >> 4) & 0xf0;
+  const b = bestKey & 0xf0;
+  return `rgb(${r + 8}, ${g + 8}, ${b + 8})`;
 }
 
 /* ---------------- Rendering ---------------- */
