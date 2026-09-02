@@ -34,15 +34,60 @@ wrangler d1 execute books-db --remote --file=schema.sql
 Since anyone with the link can currently upload/delete, you can lock those two
 actions behind a password without building a login system:
 
-1. In the Cloudflare dashboard, open your Worker → **Settings → Variables and Secrets**.
-2. Add a new **secret** (not a plain variable) named `UPLOAD_KEY`, value = your chosen password.
-3. Save — no code or redeploy needed, the Worker already checks for it.
+1. In the Cloudflare dashboard, open your Worker → **Settings → Variables and Secrets**
+   (the top-level one, not the one under the Build tab — those are different).
+2. Add a new **secret** named `UPLOAD_KEY`, value = your chosen password.
+3. Save. No redeploy needed for runtime variables — but if you're on Workers
+   Builds (Git-connected), check the Versions list on the Overview tab to
+   make sure the version with the secret is actually the one serving live
+   traffic (promote it if not).
 
 Once set, visitors can still browse and read every PDF freely. The first time
 someone tries to **upload or delete**, the site will prompt them for the
 password and remember it for that browser session.
 
 Leave `UPLOAD_KEY` unset if you want uploads to stay fully open to anyone.
+
+## 5. Enable large-file uploads (R2 direct upload)
+
+Big PDFs (over Cloudflare's ~100MB Worker request limit) upload straight from
+the browser to R2 using a presigned URL, bypassing the Worker entirely. This
+needs two things set up once:
+
+**A. Create an R2 API token**
+
+1. Cloudflare dashboard → **R2 Object Storage** → **Manage API Tokens** →
+   **Create API Token**.
+2. Permissions: **Object Read & Write**, scoped to the `books` bucket.
+3. Create it, and copy the **Access Key ID**, **Secret Access Key**, and
+   your **Account ID** (shown on the token page, or on the R2 overview page).
+
+**B. Add them as Worker secrets**
+
+In your Worker's **Settings → Variables and Secrets** (the top-level Runtime
+one), add three secrets:
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+
+**C. Allow the browser to talk directly to R2 (CORS)**
+
+Go to your `books` R2 bucket → **Settings** → **CORS Policy** → add a rule:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://<your-worker-subdomain>.workers.dev"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Replace the origin with your actual site URL (and add your custom domain too,
+if you set one up later). Without this step, large uploads will fail with a
+CORS error even though the credentials are correct.
 
 ## 5. (Optional) Lock the whole site down with Cloudflare Access
 
