@@ -212,27 +212,88 @@ function matchesSearch(name, query) {
 }
 
 /* ---------------- Thumbnail generation ---------------- */
+const A4_W = 210;
+const A4_H = 297;
+
 async function generateThumbnail(file) {
   try {
     const buf = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 1 });
-    const targetWidth = 300;
-    const scale = targetWidth / viewport.width;
-    const scaledViewport = page.getViewport({ scale });
 
+    // Render the cover page at a fixed pixel height so any page ratio is
+    // captured with enough detail to sample its border color.
+    const rawViewport = page.getViewport({ scale: 1 });
+    const renderHeight = 600;
+    const scale = renderHeight / rawViewport.height;
+    const pageViewport = page.getViewport({ scale });
+
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = pageViewport.width;
+    pageCanvas.height = pageViewport.height;
+    const pageCtx = pageCanvas.getContext("2d");
+    await page.render({ canvasContext: pageCtx, viewport: pageViewport }).promise;
+
+    // Sample the average color of the cover's outer border so the empty A4
+    // space around it can blend in seamlessly (instead of a flat page color).
+    const edgeColor = sampleEdgeColor(pageCanvas);
+
+    // Build an A4-proportioned thumbnail and draw the cover fitted inside it.
+    const THUMB_W = 300;
+    const THUMB_H = Math.round(300 * (A4_H / A4_W));
     const canvas = document.createElement("canvas");
-    canvas.width = scaledViewport.width;
-    canvas.height = scaledViewport.height;
+    canvas.width = THUMB_W;
+    canvas.height = THUMB_H;
     const ctx = canvas.getContext("2d");
-    await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+    ctx.fillStyle = edgeColor;
+    ctx.fillRect(0, 0, THUMB_W, THUMB_H);
+
+    const fitScale = Math.min(THUMB_W / pageViewport.width, THUMB_H / pageViewport.height);
+    const dw = pageViewport.width * fitScale;
+    const dh = pageViewport.height * fitScale;
+    const dx = (THUMB_W - dw) / 2;
+    const dy = (THUMB_H - dh) / 2;
+    ctx.drawImage(pageCanvas, dx, dy, dw, dh);
 
     return await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.85));
   } catch (err) {
     console.warn("Thumbnail generation failed:", err);
     return null;
   }
+}
+
+// Average the color of the page's outer border pixels (top + bottom + edges).
+function sampleEdgeColor(canvas) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  const thickness = Math.max(1, Math.round(Math.min(w, h) * 0.01));
+  const data = ctx.getImageData(0, 0, w, h).data;
+  let r = 0, g = 0, b = 0, n = 0;
+
+  const addLine = (y) => {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+    }
+  };
+  const addCol = (x) => {
+    for (let y = 0; y < h; y++) {
+      const i = (y * w + x) * 4;
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+    }
+  };
+
+  for (let t = 0; t < thickness; t++) {
+    addLine(t);
+    addLine(h - 1 - t);
+  }
+  for (let t = 0; t < thickness; t++) {
+    addCol(t);
+    addCol(w - 1 - t);
+  }
+  if (n === 0) return "#e4e0d8";
+  return `rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`;
 }
 
 /* ---------------- Rendering ---------------- */
