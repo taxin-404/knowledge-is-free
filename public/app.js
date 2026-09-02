@@ -91,8 +91,6 @@ const noResultsEl = document.getElementById("no-results");
 const searchInput = document.getElementById("search-input");
 
 const reader = document.getElementById("reader");
-const readerTitle = document.getElementById("reader-title");
-const readerClose = document.getElementById("reader-close");
 
 let allFiles = [];
 let lastFileCount = 0;
@@ -293,7 +291,6 @@ async function loadFiles() {
 }
 
 function openReader(f) {
-  readerTitle.textContent = displayName(f.name);
   reader.classList.add("open");
   const container = document.getElementById("reader-frame");
   container.innerHTML = "";
@@ -320,11 +317,6 @@ function closeReader() {
   reader.classList.remove("open");
   document.getElementById("reader-frame").innerHTML = "";
 }
-
-readerClose.addEventListener("click", () => {
-  closeReader();
-  if (history.state && history.state.reader) history.back();
-});
 
 window.addEventListener("popstate", () => {
   closeReader();

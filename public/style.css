@@ -34,8 +34,7 @@ html[data-lang="bn"] .count,
 html[data-lang="bn"] .book-meta,
 html[data-lang="bn"] .lang-toggle,
 html[data-lang="bn"] .book-remove,
-html[data-lang="bn"] #search-input,
-html[data-lang="bn"] .reader-actions button {
+html[data-lang="bn"] #search-input {
   font-family: var(--bangla-ui);
 }
 
@@ -339,31 +338,6 @@ main {
   z-index: 10;
 }
 .reader.open { display: flex; }
-.reader-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.9rem 1.2rem;
-  border-bottom: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  position: relative;
-  z-index: 9999;
-}
-.reader-actions { display: flex; gap: 0.8rem; align-items: center; }
-.reader-actions button {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--fg);
-  background: none;
-  border: 1px solid #3d4a53;
-  padding: 0.35rem 0.6rem;
-  border-radius: 1px;
-  cursor: pointer;
-}
-.reader-actions button:hover { border-color: var(--brass-bright); color: var(--brass-bright); }
 #reader-frame {
   flex: 1;
   border: none;
