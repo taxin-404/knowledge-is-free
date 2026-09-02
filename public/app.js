@@ -42,6 +42,18 @@ const I18N = {
 };
 
 let currentLang = localStorage.getItem("lang") || "en";
+let currentTheme = localStorage.getItem("theme") || "dark";
+
+function applyTheme() {
+  document.getElementById("html-root").setAttribute("data-theme", currentTheme);
+  document.getElementById("theme-icon").innerHTML = currentTheme === "dark" ? "&#9789;" : "&#9788;";
+}
+document.getElementById("theme-toggle").addEventListener("click", () => {
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", currentTheme);
+  applyTheme();
+});
+applyTheme();
 
 function t(key) {
   return I18N[currentLang][key] ?? I18N.en[key];
@@ -288,7 +300,7 @@ function openReader(f) {
       type: "container",
       target: container,
       src: `/api/files/${f.id}`,
-      theme: { preference: "dark" },
+      theme: { preference: currentTheme },
     });
   } else {
     // Fallback if EmbedPDF failed to load for any reason
