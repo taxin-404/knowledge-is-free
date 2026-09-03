@@ -400,6 +400,7 @@ document.addEventListener("keydown", (e) => {
 async function deleteFile(id) {
   if (!confirm(currentLang === "bn" ? "এই দলিলটি তাক থেকে সরাবেন?" : "Remove this document from the shelf?")) return;
   const key = getUploadKey(true);
+  if (!key) return; // user canceled the password prompt
   const res = await fetch(`/api/files/${id}`, {
     method: "DELETE",
     headers: { "x-upload-key": key },
@@ -496,6 +497,7 @@ async function uploadFiles(fileList) {
   }
 
   const key = getUploadKey(true);
+  if (!key) return; // user canceled the password prompt
   progress.hidden = false;
 
   let failed = 0;
@@ -505,7 +507,9 @@ async function uploadFiles(fileList) {
       const ok = await uploadFile(files[i], key, label);
       if (!ok) failed++;
     } catch (err) {
-      // wrong password — abort the rest of the queue
+      // wrong password — abort the rest of the queue, and count everything
+      // that didn't get a chance to run so the final message says "Failed."
+      failed += files.length - i;
       break;
     }
   }
